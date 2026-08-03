@@ -63,7 +63,6 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   reviews      Review[]
-  wishlist     Wishlist[]
 
   @@map("users")
 }

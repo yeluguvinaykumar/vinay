@@ -27,7 +27,7 @@ function wrap(m: MailMessage): string {
 
 export async function sendMail(m: MailMessage): Promise<boolean> {
   const hasHost = !!process.env.SMTP_HOST;
-  const composed = carrierS(m);
+  const composed = wrap(m);
 
   if (!hasHost) {
     console.log("\n📧 [mail] (SMTP not configured — skipping send)", {

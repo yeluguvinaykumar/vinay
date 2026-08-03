@@ -210,9 +210,37 @@ async function main() {
 
   const agentBySlug = (slug: string) => agentData.find((a) => a.name === slug)?.id ?? null;
 
-  const props = [
+  interface PropsSeed {
+    title: string;
+    slug?: string;
+    type: PropertyType;
+    purpose: "SALE" | "RENT";
+    price: number;
+    discountPrice?: number;
+    bedrooms: number;
+    bathrooms: number;
+    area: number;
+    parking?: number;
+    furnished?: boolean;
+    yearBuilt?: number;
+    city: string;
+    state: string;
+    address: string;
+    coverImage: string;
+    featured: boolean;
+    categoryId?: string;
+    agentName: string;
+    description: string;
+    amenities: string[];
+    nearby?: { name: string; type: string; distance: string }[];
+    gallery: string[];
+    status?: "AVAILABLE" | "SOLD" | "PENDING";
+  }
+
+  const props: PropsSeed[] = [
     {
       title: "Sunset Ridge Luxury Villa",
+      slug: "sunset-ridge-luxury-villa",
       type: "VILLA",
       purpose: "SALE",
       price: 1850000,
@@ -405,7 +433,8 @@ async function main() {
   ];
 
   for (const p of props) {
-    const existing = await prisma.property.findUnique({ where: { slug: p.slug } });
+    const slug = p.slug ?? p.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const existing = await prisma.property.findUnique({ where: { slug } });
     const data = {
       title: p.title,
       description: p.description,
@@ -417,7 +446,7 @@ async function main() {
       bathrooms: p.bathrooms,
       area: p.area,
       parking: p.parking ?? 0,
-      furnished: p.furnished,
+      furnished: p.furnished ?? false,
       yearBuilt: p.yearBuilt,
       city: p.city,
       state: p.state,
@@ -426,14 +455,14 @@ async function main() {
       amenities: p.amenities,
       nearbyPlaces: p.nearby,
       featured: p.featured,
-      status: (p.status as 'AVAILABLE' | 'SOLD' | 'PENDING') ?? "AVAILABLE",
+      status: p.status ?? "AVAILABLE",
       categoryId: p.categoryId,
       agentId: agentBySlug(p.agentName),
     };
     if (existing) {
       await prisma.property.update({ where: { id: existing.id }, data: { ...data, title: p.title } });
     } else {
-      await prisma.property.create({ data: { ...data, slug: p.slug, images: { create: p.gallery.map((url, i) => ({ url, alt: p.title, sort: i })) } } });
+      await prisma.property.create({ data: { ...data, slug, images: { create: p.gallery.map((url, i) => ({ url, alt: p.title, sort: i })) } } });
     }
   }
   console.log(`✔ ${props.length} properties`);
@@ -505,12 +534,15 @@ async function main() {
       update: {},
       create: {
         title: b.title,
+        slug: b.slug,
         excerpt: b.excerpt,
         content: b.content,
         coverImage: b.coverImage,
         categoryId,
         tags: b.tags,
         author: "VINAY Team",
+        published: true,
+        publishedAt: new Date(),
       },
     });
   }

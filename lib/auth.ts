@@ -59,6 +59,13 @@ export async function isAdmin(): Promise<boolean> {
   return user?.role === "ADMIN";
 }
 
+/** Throws a 401 ApiError unless the request is from an authenticated admin. */
+export async function requireAdmin(): Promise<{ id: string; name: string; email: string; role: string }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "ADMIN") throw new ApiError("Unauthorized", 401);
+  return user;
+}
+
 export async function destroySession() {
   const cookieStore = await cookies();
   cookieStore.delete(cookieName());

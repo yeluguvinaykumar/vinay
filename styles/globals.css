@@ -1,0 +1,187 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 224 47% 8%;
+  --card: 0 0% 100%;
+  --card-foreground: 224 47% 8%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 47% 8%;
+  --primary: 222 71% 34%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 224 47% 10%;
+  --muted: 220 14% 96%;
+  --muted-foreground: 217 16% 47%;
+  --accent: 43 74% 49%;
+  --accent-foreground: 224 47% 8%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 222 71% 34%;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: 224 50% 5%;
+  --foreground: 210 40% 97%;
+  --card: 224 42% 8%;
+  --card-foreground: 210 40% 97%;
+  --popover: 224 44% 7%;
+  --popover-foreground: 210 40% 97%;
+  --primary: 220 75% 55%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 224 25% 14%;
+  --secondary-foreground: 210 40% 96%;
+  --muted: 224 25% 13%;
+  --muted-foreground: 215 20% 64%;
+  --accent: 43 80% 55%;
+  --accent-foreground: 224 47% 7%;
+  --destructive: 0 62% 47%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 224 25% 15%;
+  --input: 224 25% 15%;
+  --ring: 220 75% 55%;
+}
+
+* {
+  @apply border-border;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  @apply bg-background text-foreground font-sans;
+}
+
+::selection {
+  @apply bg-accent/80 text-primary-foreground;
+}
+
+/* ---------- custom scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-muted;
+}
+::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-foreground/20 hover:bg-foreground/35;
+}
+
+@layer components {
+  .container-site {
+    @apply container mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .glass {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    @apply border border-white/40 shadow-glass;
+  }
+  .dark .glass {
+    background: rgba(11, 23, 57, 0.6);
+    @apply border-white/10;
+  }
+
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(120deg, #e5b72c 0%, #f5d778 45%, #b3871a 100%);
+  }
+
+  .btn-gold {
+    @apply bg-gradient-to-r from-amber-500 to-yellow-400 text-primary-foreground hover:from-amber-400 hover:to-yellow-300 transition-all duration-300 shadow-gold;
+  }
+
+  .section-pad {
+    @apply py-16 md:py-24;
+  }
+
+  .heading-display {
+    @apply font-display tracking-tight text-foreground;
+  }
+
+  .hero-gradient {
+    background:
+      radial-gradient(1100px 520px at 85% -10%, rgba(229, 183, 44, 0.22), transparent 60%),
+      radial-gradient(900px 500px at -10% 30%, rgba(29, 58, 143, 0.35), transparent 55%),
+      linear-gradient(160deg, #0b1739 0%, #12235c 45%, #1d3a8f 100%);
+  }
+
+  .card-lift {
+    @apply transition-all duration-300 hover:-translate-y-1.5 hover:shadow-navy;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .prose-vinay h1,
+  .prose-vinay h2,
+  .prose-vinay h3 {
+    @apply font-display text-foreground mt-8 mb-3;
+  }
+  .prose-vinay h1 {
+    @apply text-3xl;
+  }
+  .prose-vinay h2 {
+    @apply text-2xl;
+  }
+  .prose-vinay h3 {
+    @apply text-xl;
+  }
+  .prose-vinay p {
+    @apply text-muted-foreground leading-relaxed my-4;
+  }
+  .prose-vinay ul {
+    @apply list-disc pl-6 text-muted-foreground my-4 space-y-1.5;
+  }
+  .prose-vinay ol {
+    @apply list-decimal pl-6 text-muted-foreground my-4 space-y-1.5;
+  }
+  .prose-vinay a {
+    @apply text-primary underline-offset-4 hover:underline;
+  }
+  .prose-vinay img {
+    @apply rounded-xl my-6;
+  }
+  .prose-vinay blockquote {
+    @apply border-l-4 border-accent bg-muted/60 rounded-r-lg px-4 py-2 my-4 italic;
+  }
+  .prose-vinay strong {
+    @apply text-foreground;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.7s ease-out both;
+  }
+  .animate-fade-up {
+    animation: fadeUp 0.8s ease-out both;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

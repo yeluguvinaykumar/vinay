@@ -26,13 +26,13 @@ export function handleError(error: unknown): NextResponse {
   return fail("Something went wrong", 500);
 }
 
-export function withRateLimit(request: Request, limit = 30, windowMs = 60_000): boolean | NextResponse {
+export function withRateLimit(request: Request, limit = 30, windowMs = 60_000): NextResponse | null {
   const ip = getClientIp(request.headers);
   const res = rateLimit(ip, { limit, windowMs });
   if (!res.ok) {
     return fail("Too many requests. Please try again later.", 429, { retryAfter: res.retryAfter });
   }
-  return true;
+  return null;
 }
 
 export function requireAdminWrapper(fn: () => Promise<NextResponse>): Promise<NextResponse> {
