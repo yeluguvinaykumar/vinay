@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Award, BadgeCheck, Eye, Heart, Medal, Target } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
+import { safe } from "@/lib/query";
 import { buildMetadata } from "@/utils/seo";
 import { PageHero } from "@/components/layout/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
@@ -29,12 +30,16 @@ const TIMELINE = [
 
 export default async function AboutPage() {
   const site = await getSiteSettings();
-  const agents = await prisma.agent.findMany({
-    where: { active: true },
-    orderBy: { rating: "desc" },
-    take: 3,
-    include: { _count: { select: { properties: true } } },
-  });
+  const agents = await safe(
+    () =>
+      prisma.agent.findMany({
+        where: { active: true },
+        orderBy: { rating: "desc" },
+        take: 3,
+        include: { _count: { select: { properties: true } } },
+      }),
+    []
+  );
   const stats = site.stats;
 
   return (

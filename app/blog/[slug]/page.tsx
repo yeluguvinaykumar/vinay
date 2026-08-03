@@ -7,6 +7,7 @@ import Image from "next/image";
 import { CalendarDays, Clock3, Eye, User } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
+import { safe } from "@/lib/query";
 import { buildMetadata } from "@/utils/seo";
 import { formatDate, readingTime } from "@/utils/format";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
@@ -22,10 +23,14 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = await prisma.blog.findUnique({
-    where: { slug },
-    select: { title: true, excerpt: true, coverImage: true, metaTitle: true, metaDescription: true },
-  });
+  const post = await safe(
+    () =>
+      prisma.blog.findUnique({
+        where: { slug },
+        select: { title: true, excerpt: true, coverImage: true, metaTitle: true, metaDescription: true },
+      }),
+    null
+  );
   if (!post) return {};
   return buildMetadata({
     title: post.metaTitle ?? post.title,
@@ -39,24 +44,32 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
-  const post = await prisma.blog.findUnique({
-    where: { slug },
-    include: { category: true },
-  });
+  const post = await safe(
+    () =>
+      prisma.blog.findUnique({
+        where: { slug },
+        include: { category: true },
+      }),
+    null
+  );
 
   if (!post || !post.published) notFound();
 
-  void prisma.blog.update({ where: { id: post.id }, data: { views: { increment: 1 } } });
+  void prisma.blog.update({ where: { id: post.id }, data: { views: { increment: 1 } } }).catch(() => {});
 
-  const related = await prisma.blog.findMany({
-    where: {
-      published: true,
-      OR: [{ categoryId: post.categoryId ?? undefined }, { tags: { hasSome: post.tags } }],
-      NOT: { id: post.id },
-    },
-    take: 3,
-    include: { category: true },
-  });
+  const related = await safe(
+    () =>
+      prisma.blog.findMany({
+        where: {
+          published: true,
+          OR: [{ categoryId: post.categoryId ?? undefined }, { tags: { hasSome: post.tags } }],
+          NOT: { id: post.id },
+        },
+        take: 3,
+        include: { category: true },
+      }),
+    []
+  );
 
   const paragraphs = post.content.split(/\n{2,}/);
 

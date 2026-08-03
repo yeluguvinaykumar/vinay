@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { safe } from "@/lib/query";
 import type { Prisma } from "@prisma/client";
 
 export interface PropertyListQuery {
@@ -95,21 +96,25 @@ export async function listProperties(query: PropertyListQuery) {
   const limit = Math.min(48, Math.max(1, query.limit ?? 12));
   const where = buildWhere(query);
 
-  const [properties, total] = await prisma.$transaction([
-    prisma.property.findMany({
-      where,
-      select: LIST_SELECT,
-      orderBy: buildOrder(query.sort),
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.property.count({ where }),
-  ]);
+  const [properties, total] = await safe(
+    () =>
+      prisma.$transaction([
+        prisma.property.findMany({
+          where,
+          select: LIST_SELECT,
+          orderBy: buildOrder(query.sort),
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.property.count({ where }),
+      ]),
+    [[], 0]
+  );
 
   return { properties, total, page, limit, totalPages: Math.max(1, Math.ceil(total / limit)) };
 }
 
 export async function getCities() {
-  const rows = await prisma.property.groupBy({ by: ["city"], _count: { _all: true } });
+  const rows = await safe(() => prisma.property.groupBy({ by: ["city"], _count: { _all: true } }), []);
   return rows.map((r) => ({ city: r.city, count: r._count._all })).sort((a, b) => b.count - a.count);
 }

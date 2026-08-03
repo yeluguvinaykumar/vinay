@@ -1,15 +1,15 @@
 import { prisma } from "@/lib/prisma";
+import { safe } from "@/lib/query";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Rating } from "@/components/shared/rating";
 import { Reveal } from "@/components/shared/reveal";
 import { Quote } from "lucide-react";
 
 export async function HomeTestimonials() {
-  const testimonials = await prisma.testimonial.findMany({
-    where: { active: true },
-    orderBy: { featured: "desc" },
-    take: 3,
-  });
+  const testimonials = await safe(
+    () => prisma.testimonial.findMany({ where: { active: true }, orderBy: { featured: "desc" }, take: 3 }),
+    []
+  );
 
   return (
     <section className="section-pad bg-muted/40">

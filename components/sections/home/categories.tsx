@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Building2, Home, House, Map, MapPin, type LucideIcon } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
+import { safe } from "@/lib/query";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal } from "@/components/shared/reveal";
 import { PROPERTY_TYPE_LABELS } from "@/types";
@@ -15,8 +16,8 @@ const ICONS: Record<string, LucideIcon> = {
 };
 
 export async function HomeCategories() {
-  const categories = await prisma.category.findMany({ orderBy: { sort: "asc" } });
-  const counts = await prisma.property.groupBy({ by: ["categoryId"], _count: { _all: true } });
+  const categories = await safe(() => prisma.category.findMany({ orderBy: { sort: "asc" } }), []);
+  const counts = await safe(() => prisma.property.groupBy({ by: ["categoryId"], _count: { _all: true } }), []);
   const countMap = Object.fromEntries(counts.map((c) => [c.categoryId, c._count._all]));
 
   const items = categories.map((c) => {

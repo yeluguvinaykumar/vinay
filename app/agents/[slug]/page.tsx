@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { Award, Languages, Mail, MessageCircle, Phone } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
+import { safe } from "@/lib/query";
 import { buildMetadata } from "@/utils/seo";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { AgentCard } from "@/components/shared/agent-card";
@@ -22,7 +23,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const agent = await prisma.agent.findUnique({ where: { slug } });
+  const agent = await safe(() => prisma.agent.findUnique({ where: { slug } }), null);
   if (!agent) return {};
   return buildMetadata({
     title: agent.name,
@@ -34,23 +35,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function AgentProfilePage({ params }: Props) {
   const { slug } = await params;
-  const agent = await prisma.agent.findUnique({
-    where: { slug, active: true },
-    include: {
-      _count: { select: { properties: true } },
-      properties: {
-        orderBy: { createdAt: "desc" },
-        take: 6,
-        select: {
-          id: true, title: true, slug: true, price: true, discountPrice: true, type: true, purpose: true,
-          status: true, bedrooms: true, bathrooms: true, area: true, city: true, state: true, address: true,
-          coverImage: true, featured: true, furnished: true, createdAt: true,
-          agent: { select: { name: true, slug: true, photo: true } },
-          category: { select: { name: true, slug: true } },
+  const agent = await safe(
+    () =>
+      prisma.agent.findUnique({
+        where: { slug, active: true },
+        include: {
+          _count: { select: { properties: true } },
+          properties: {
+            orderBy: { createdAt: "desc" },
+            take: 6,
+            select: {
+              id: true, title: true, slug: true, price: true, discountPrice: true, type: true, purpose: true,
+              status: true, bedrooms: true, bathrooms: true, area: true, city: true, state: true, address: true,
+              coverImage: true, featured: true, furnished: true, createdAt: true,
+              agent: { select: { name: true, slug: true, photo: true } },
+              category: { select: { name: true, slug: true } },
+            },
+          },
         },
-      },
-    },
-  });
+      }),
+    null
+  );
 
   if (!agent) notFound();
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CalendarDays, Search, User } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
+import { safe } from "@/lib/query";
 import { buildMetadata } from "@/utils/seo";
 import { formatDate, readingTime } from "@/utils/format";
 import { PageHero } from "@/components/layout/page-hero";
@@ -28,7 +29,7 @@ export default async function BlogPage({ searchParams }: Props) {
   const q = (get(sp.q) ?? "").trim();
   const category = get(sp.category) ?? "";
 
-  const categories = await prisma.blogCategory.findMany({ orderBy: { createdAt: "asc" } });
+  const categories = await safe(() => prisma.blogCategory.findMany({ orderBy: { createdAt: "asc" } }), []);
 
   const where = {
     published: true,
@@ -36,15 +37,19 @@ export default async function BlogPage({ searchParams }: Props) {
     ...(q ? { OR: [{ title: { contains: q, mode: "insensitive" as const } }, { excerpt: { contains: q, mode: "insensitive" as const } }, { tags: { hasSome: [q] } }] } : {}),
   };
 
-  const posts = await prisma.blog.findMany({
-    where,
-    orderBy: { publishedAt: "desc" },
-    take: 12,
-    include: { category: true },
-  });
+  const posts = await safe(
+    () => prisma.blog.findMany({ where, orderBy: { publishedAt: "desc" }, take: 12, include: { category: true } }),
+    []
+  );
 
-  const recent = await prisma.blog.findMany({ where: { published: true }, orderBy: { publishedAt: "desc" }, take: 4, select: { id: true, title: true, slug: true, publishedAt: true, views: true } });
-  const popular = await prisma.blog.findMany({ where: { published: true }, orderBy: { views: "desc" }, take: 4, select: { id: true, title: true, slug: true, publishedAt: true, views: true } });
+  const recent = await safe(
+    () => prisma.blog.findMany({ where: { published: true }, orderBy: { publishedAt: "desc" }, take: 4, select: { id: true, title: true, slug: true, publishedAt: true, views: true } }),
+    []
+  );
+  const popular = await safe(
+    () => prisma.blog.findMany({ where: { published: true }, orderBy: { views: "desc" }, take: 4, select: { id: true, title: true, slug: true, publishedAt: true, views: true } }),
+    []
+  );
 
   return (
     <>

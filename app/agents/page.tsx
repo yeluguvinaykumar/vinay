@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 
 import { prisma } from "@/lib/prisma";
+import { safe } from "@/lib/query";
 import { buildMetadata } from "@/utils/seo";
 import { PageHero } from "@/components/layout/page-hero";
 import { AgentCard } from "@/components/shared/agent-card";
@@ -16,11 +17,15 @@ export const metadata: Metadata = buildMetadata({
 });
 
 export default async function AgentsPage() {
-  const agents = await prisma.agent.findMany({
-    where: { active: true },
-    orderBy: { rating: "desc" },
-    include: { _count: { select: { properties: true } } },
-  });
+  const agents = await safe(
+    () =>
+      prisma.agent.findMany({
+        where: { active: true },
+        orderBy: { rating: "desc" },
+        include: { _count: { select: { properties: true } } },
+      }),
+    []
+  );
 
   return (
     <>

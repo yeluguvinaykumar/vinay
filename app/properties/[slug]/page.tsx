@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
+import { safe } from "@/lib/query";
 import { buildMetadata, realEstateSchema } from "@/utils/seo";
 import { formatPrice, formatArea } from "@/utils/format";
 import { PROPERTY_TYPE_LABELS, PURPOSE_LABELS, STATUS_LABELS } from "@/types";
@@ -44,10 +45,14 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const property = await prisma.property.findUnique({
-    where: { slug },
-    select: { title: true, description: true, coverImage: true, city: true, metaTitle: true, metaDescription: true },
-  });
+  const property = await safe(
+    () =>
+      prisma.property.findUnique({
+        where: { slug },
+        select: { title: true, description: true, coverImage: true, city: true, metaTitle: true, metaDescription: true },
+      }),
+    null
+  );
   if (!property) return {};
   return buildMetadata({
     title: property.metaTitle ?? property.title,
@@ -59,40 +64,52 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PropertyDetailPage({ params }: Props) {
   const { slug } = await params;
-  const property = await prisma.property.findUnique({
-    where: { slug },
-    include: {
-      images: { orderBy: { sort: "asc" } },
-      agent: true,
-      category: true,
-      _count: { select: { reviews: true } },
-    },
-  });
+  const property = await safe(
+    () =>
+      prisma.property.findUnique({
+        where: { slug },
+        include: {
+          images: { orderBy: { sort: "asc" } },
+          agent: true,
+          category: true,
+          _count: { select: { reviews: true } },
+        },
+      }),
+    null
+  );
 
   if (!property) notFound();
 
   // Increment view counter (fire-and-forget)
-  void prisma.property.update({ where: { id: property.id }, data: { views: { increment: 1 } } });
+  void prisma.property.update({ where: { id: property.id }, data: { views: { increment: 1 } } }).catch(() => {});
 
-  const related = await prisma.property.findMany({
-    where: {
-      OR: [{ type: property.type }, { city: property.city }],
-      NOT: { id: property.id },
-    },
-    take: 3,
-    select: {
-      id: true, title: true, slug: true, price: true, discountPrice: true, type: true, purpose: true,
-      status: true, bedrooms: true, bathrooms: true, area: true, city: true, state: true, address: true,
-      coverImage: true, featured: true, furnished: true, createdAt: true,
-      agent: { select: { name: true, slug: true, photo: true } },
-      category: { select: { name: true, slug: true } },
-    },
-  });
+  const related = await safe(
+    () =>
+      prisma.property.findMany({
+        where: {
+          OR: [{ type: property.type }, { city: property.city }],
+          NOT: { id: property.id },
+        },
+        take: 3,
+        select: {
+          id: true, title: true, slug: true, price: true, discountPrice: true, type: true, purpose: true,
+          status: true, bedrooms: true, bathrooms: true, area: true, city: true, state: true, address: true,
+          coverImage: true, featured: true, furnished: true, createdAt: true,
+          agent: { select: { name: true, slug: true, photo: true } },
+          category: { select: { name: true, slug: true } },
+        },
+      }),
+    []
+  );
 
-  const reviews = await prisma.review.findMany({
-    where: { propertyId: property.id, approved: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const reviews = await safe(
+    () =>
+      prisma.review.findMany({
+        where: { propertyId: property.id, approved: true },
+        orderBy: { createdAt: "desc" },
+      }),
+    []
+  );
   const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
 
   const gallery = property.images.length
