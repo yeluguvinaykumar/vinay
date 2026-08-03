@@ -1,0 +1,308 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+  USER
+}
+
+enum PropertyType {
+  APARTMENT
+  VILLA
+  COMMERCIAL
+  PLOT
+  HOUSE
+  PENTHOUSE
+  OFFICE
+}
+
+enum PropertyPurpose {
+  SALE
+  RENT
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  SOLD
+  PENDING
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  FOLLOW_UP
+  CLOSED
+  LOST
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  password     String
+  role         UserRole @default(USER)
+  image        String?
+  phone        String?
+  title        String?
+  emailVerified DateTime? @map("email_verified")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  reviews      Review[]
+  wishlist     Wishlist[]
+
+  @@map("users")
+}
+
+model Agent {
+  id         String      @id @default(cuid())
+  name       String
+  slug       String      @unique
+  photo      String?
+  title      String?
+  phone      String?
+  email      String      @unique
+  whatsapp   String?
+  experience Int         @default(0)
+  rating     Float       @default(5)
+  bio        String?
+  social     Json?
+  languages  String[]
+  active     Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  properties Property[]
+
+  @@map("agents")
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  icon      String?
+  sort      Int        @default(0)
+  properties Property[]
+  createdAt DateTime   @default(now())
+
+  @@map("categories")
+}
+
+model Property {
+  id            String        @id @default(cuid())
+  title         String
+  slug          String        @unique
+  description   String        @db.Text
+  price         Int
+  discountPrice Int?
+  type          PropertyType
+  purpose       PropertyPurpose?
+  bedrooms      Int?
+  bathrooms     Int?
+  area          Float
+  builtUpArea   Float?
+  parking       Int?          @default(0)
+  furnished     Boolean       @default(false)
+  yearBuilt     Int?
+  address       String
+  city          String
+  state         String?
+  zipCode       String?
+  country       String        @default("United States")
+  latitude      Float?
+  longitude     Float?
+  coverImage    String?
+  videoUrl      String?
+  amenities     String[]
+  nearbyPlaces  Json?
+  floorPlans    Json?
+  tags          String[]
+  featured      Boolean       @default(false)
+  views         Int           @default(0)
+  status        PropertyStatus @default(AVAILABLE)
+  metaTitle     String?
+  metaDescription String?
+  categoryId    String?
+  agentId       String?
+  category      Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  agent         Agent?        @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  images        PropertyImage[]
+  leads         Lead[]
+  appointments  Appointment[]
+  reviews       Review[]
+  wishlist      Wishlist[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([type, status])
+  @@index([city])
+  @@index([featured])
+  @@map("properties")
+}
+
+model PropertyImage {
+  id        String   @id @default(cuid())
+  url       String
+  alt       String?
+  sort      Int      @default(0)
+  propertyId String
+  property  Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("property_images")
+}
+
+model Lead {
+  id         String     @id @default(cuid())
+  name       String
+  email      String
+  phone      String?
+  message    String?
+  source     String     @default("property")
+  status     LeadStatus @default(NEW)
+  propertyId String?
+  property   Property?  @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([status])
+  @@map("leads")
+}
+
+model Appointment {
+  id          String             @id @default(cuid())
+  name        String
+  email       String
+  phone       String
+  date        DateTime
+  timeSlot    String
+  message     String?
+  status      AppointmentStatus  @default(PENDING)
+  propertyId  String?
+  property    Property?          @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([date])
+  @@map("appointments")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("messages")
+}
+
+model BlogCategory {
+  id        String  @id @default(cuid())
+  name      String
+  slug      String  @unique
+  createdAt DateTime @default(now())
+  blogs     Blog[]
+
+  @@map("blog_categories")
+}
+
+model Blog {
+  id              String        @id @default(cuid())
+  title           String
+  slug            String        @unique
+  excerpt         String?
+  content         String        @db.Text
+  coverImage      String?
+  author          String        @default("VINAY Team")
+  authorImage     String?
+  categoryId      String?
+  category        BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags            String[]
+  views           Int           @default(0)
+  published       Boolean       @default(true)
+  publishedAt     DateTime      @default(now())
+  metaTitle       String?
+  metaDescription String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([published])
+  @@map("blogs")
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  role      String?
+  content   String
+  rating    Int      @default(5)
+  avatar    String?
+  company   String?
+  featured  Boolean  @default(false)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("testimonials")
+}
+
+model Newsletter {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("newsletter")
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name       String
+  email      String?
+  rating     Int
+  comment    String
+  approved   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@map("reviews")
+}
+
+model Wishlist {
+  id         String   @id @default(cuid())
+  guestId    String
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([guestId, propertyId])
+  @@map("wishlist")
+}
+
+model Setting {
+  id        String @id @default(cuid())
+  key       String @unique
+  value     String @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
