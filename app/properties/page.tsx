@@ -1,12 +1,11 @@
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { PageHero } from "@/components/layout/page-hero";
 import { PropertyFilters } from "@/components/shared/property-filters";
 import { PropertyCard } from "@/components/shared/property-card";
-import { Pagination } from "@/components/shared/pagination";
+import { PropertiesToolbar } from "@/components/shared/properties-toolbar";
 import { EmptyState } from "@/components/shared/empty-state";
 import { listProperties, getCities } from "@/lib/properties";
 import { buildMetadata } from "@/utils/seo";
@@ -58,31 +57,7 @@ export default async function PropertiesPage({ searchParams }: Props) {
           <PropertyFilters cities={cities} />
 
           <div>
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground">
-                <span className="font-bold text-foreground">{result.total}</span>{" "}
-                {result.total === 1 ? "property" : "properties"} found
-              </p>
-              <form action="/properties" className="flex items-center gap-2">
-                <input type="hidden" name="q" value={get(sp.q) ?? ""} />
-                <select
-                  name="sort"
-                  defaultValue={sort}
-                  onChange={(e) => {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set("sort", e.target.value);
-                    window.location.href = url.toString();
-                  }}
-                  className="h-10 rounded-lg border bg-card px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  aria-label="Sort properties"
-                >
-                  <option value="newest">Newest</option>
-                  <option value="oldest">Oldest</option>
-                  <option value="price_asc">Price: Low to High</option>
-                  <option value="price_desc">Price: High to Low</option>
-                </select>
-              </form>
-            </div>
+            <PropertiesToolbar total={result.total} sort={sort} page={result.page} totalPages={result.totalPages} />
 
             {result.properties.length === 0 ? (
               <EmptyState
@@ -96,27 +71,6 @@ export default async function PropertiesPage({ searchParams }: Props) {
                   <PropertyCard key={p.id} property={p} />
                 ))}
               </div>
-            )}
-
-            <div className="mt-12 flex justify-center">
-              <Pagination
-                page={result.page}
-                totalPages={result.totalPages}
-                onPageChange={(page) => {
-                  const url = new URL(window.location.href);
-                  url.searchParams.set("page", String(page));
-                  window.location.href = url.toString();
-                }}
-              />
-            </div>
-
-            {result.totalPages > 1 && (
-              <p className="mt-4 text-center text-xs text-muted-foreground">
-                Viewing page {result.page} of {result.totalPages} —{" "}
-                <Link href="/properties" className="text-primary hover:underline">
-                  back to page 1
-                </Link>
-              </p>
             )}
           </div>
         </div>
